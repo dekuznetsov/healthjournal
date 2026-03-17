@@ -9,6 +9,7 @@ import 'package:window_manager/window_manager.dart';
 import 'models/health_record.dart';
 import 'services/database_helper.dart';
 import 'services/report_service.dart';
+import 'services/notification_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,6 +36,7 @@ Future<void> main() async {
   }
 
   await DatabaseHelper().seedData();
+  await NotificationService().init();
   runApp(const HealthDiaryApp());
 }
 
@@ -119,8 +121,8 @@ class _MainScreenState extends State<MainScreen> {
                 title: const Text('Сформувати звіт'),
                 subtitle: const Text('За останні 30 днів'),
                 onTap: () async {
-                  await ReportService().generateAndShowReport(_records);
-                  if (mounted) Navigator.pop(context);
+                  Navigator.pop(context);
+                  await ReportService().generateAndShowReport(_records, context);
                 },
               ),
               const Padding(
