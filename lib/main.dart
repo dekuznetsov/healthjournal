@@ -80,6 +80,8 @@ class _MainScreenState extends State<MainScreen> {
       _records.clear();
       _records.addAll(records);
     });
+    // Update notifications based on new data
+    await NotificationService().scheduleDailyReminders();
   }
 
   @override
@@ -117,86 +119,7 @@ class _MainScreenState extends State<MainScreen> {
                 padding: EdgeInsets.all(16.0),
                 child: Text('Налаштування нагадувань', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
               ),
-              FutureBuilder<bool>(
-                future: SettingsService().getNotificationsEnabled(),
-                builder: (context, snapshot) {
-                  final enabled = snapshot.data ?? true;
-                  return SwitchListTile(
-                    title: const Text('Нагадування'),
-                    subtitle: const Text('8:00 та 20:00 (з повторами)'),
-                    value: enabled,
-                    onChanged: (value) async {
-                      await SettingsService().setNotificationsEnabled(value);
-                      await NotificationService().scheduleDailyReminders();
-                      (context as Element).markNeedsBuild(); // Refresh drawer
-                    },
-                    secondary: Icon(enabled ? Icons.notifications_active : Icons.notifications_off, color: Colors.teal),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.access_time, color: Colors.teal),
-                title: const Text('Змінити час нагадувань'),
-                onTap: () async {
-                  final morningTime = await SettingsService().getMorningTime();
-                  final eveningTime = await SettingsService().getEveningTime();
-                  
-                  if (!mounted) return;
-                  
-                  await showDialog(
-                    context: context,
-                    builder: (context) => StatefulBuilder(
-                      builder: (context, setState) {
-                        return AlertDialog(
-                          title: const Text('Час нагадувань'),
-                          content: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              ListTile(
-                                title: const Text('Ранок'),
-                                trailing: Text(morningTime.format(context)),
-                                onTap: () async {
-                                  final newTime = await showTimePicker(
-                                    context: context,
-                                    initialTime: morningTime,
-                                  );
-                                  if (newTime != null) {
-                                    await SettingsService().setMorningTime(newTime);
-                                    setState(() {});
-                                  }
-                                },
-                              ),
-                              ListTile(
-                                title: const Text('Вечір'),
-                                trailing: Text(eveningTime.format(context)),
-                                onTap: () async {
-                                  final newTime = await showTimePicker(
-                                    context: context,
-                                    initialTime: eveningTime,
-                                  );
-                                  if (newTime != null) {
-                                    await SettingsService().setEveningTime(newTime);
-                                    setState(() {});
-                                  }
-                                },
-                              ),
-                            ],
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () async {
-                                await NotificationService().scheduleDailyReminders();
-                                if (context.mounted) Navigator.pop(context);
-                              },
-                              child: const Text('Готово'),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                  );
-                },
-              ),
+              const ReminderSettingsSection(),
               const Padding(
                 padding: EdgeInsets.all(16.0),
                 child: Text('Звітність', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
@@ -916,3 +839,121 @@ class _ChartsTabState extends State<ChartsTab> {
     );
   }
 }
+
+class ReminderSettingsSection extends StatefulWidget {
+  const ReminderSettingsSection({super.key});
+
+  @override
+  State<ReminderSettingsSection> createState() => _ReminderSettingsSectionState();
+}
+
+class _ReminderSettingsSectionState extends State<ReminderSettingsSection> {
+  bool _enabled = true;
+  TimeOfDay _morningTime = const TimeOfDay(hour: 8, minute: 0);
+  TimeOfDay _eveningTime = const TimeOfDay(hour: 20, minute: 0);
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    final enabled = await SettingsService().getNotificationsEnabled();
+    final morning = await SettingsService().getMorningTime();
+    final evening = await SettingsService().getEveningTime();
+    if (mounted) {
+      setState(() {
+        _enabled = enabled;
+        _morningTime = morning;
+        _eveningTime = evening;
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const ListTile(title: Text('Завантаження налаштувань...'));
+    }
+
+    return Column(
+      children: [
+        SwitchListTile(
+          title: const Text('Нагадування'),
+          subtitle: Text('${_morningTime.format(context)} та ${_eveningTime.format(context)} (з повторами)'),
+          value: _enabled,
+          onChanged: (value) async {
+            setState(() => _enabled = value);
+            await SettingsService().setNotificationsEnabled(value);
+            await NotificationService().scheduleDailyReminders();
+          },
+          secondary: Icon(_enabled ? Icons.notifications_active : Icons.notifications_off, color: Colors.teal),
+        ),
+        ListTile(
+          leading: const Icon(Icons.access_time, color: Colors.teal),
+          title: const Text('Змінити час нагадувань'),
+          onTap: () async {
+            await showDialog(
+              context: context,
+              builder: (context) => StatefulBuilder(
+                builder: (context, setDialogState) {
+                  return AlertDialog(
+                    title: const Text('Час нагадувань'),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ListTile(
+                          title: const Text('Ранок'),
+                          trailing: Text(_morningTime.format(context)),
+                          onTap: () async {
+                            final newTime = await showTimePicker(
+                              context: context,
+                              initialTime: _morningTime,
+                            );
+                            if (newTime != null) {
+                              await SettingsService().setMorningTime(newTime);
+                              setDialogState(() => _morningTime = newTime);
+                              setState(() {}); // Оновити Drawer
+                            }
+                          },
+                        ),
+                        ListTile(
+                          title: const Text('Вечір'),
+                          trailing: Text(_eveningTime.format(context)),
+                          onTap: () async {
+                            final newTime = await showTimePicker(
+                              context: context,
+                              initialTime: _eveningTime,
+                            );
+                            if (newTime != null) {
+                              await SettingsService().setEveningTime(newTime);
+                              setDialogState(() => _eveningTime = newTime);
+                              setState(() {}); // Оновити Drawer
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () async {
+                          await NotificationService().scheduleDailyReminders();
+                          if (context.mounted) Navigator.pop(context);
+                        },
+                        child: const Text('Готово'),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
