@@ -8,6 +8,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:window_manager/window_manager.dart';
 import 'models/health_record.dart';
 import 'services/database_helper.dart';
+import 'services/report_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -111,6 +112,19 @@ class _MainScreenState extends State<MainScreen> {
               ),
               const Padding(
                 padding: EdgeInsets.all(16.0),
+                child: Text('Звітність', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+              ),
+              ListTile(
+                leading: const Icon(Icons.picture_as_pdf, color: Colors.teal),
+                title: const Text('Сформувати звіт'),
+                subtitle: const Text('За останні 30 днів'),
+                onTap: () async {
+                  await ReportService().generateAndShowReport(_records);
+                  if (mounted) Navigator.pop(context);
+                },
+              ),
+              const Padding(
+                padding: EdgeInsets.all(16.0),
                 child: Text('Розробка', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
               ),
               ListTile(
@@ -209,7 +223,13 @@ class _AddDataTabState extends State<AddDataTab> {
 
   Future<void> _save() async {
     if (_formKey.currentState!.validate()) {
-      final sugarVal = _period == 'morning' ? double.tryParse(_sugarController.text.replaceFirst(',', '.')) : null;
+      double? sugarVal;
+      if (_period == 'morning') {
+        final parsed = double.tryParse(_sugarController.text.replaceFirst(',', '.'));
+        if (parsed != null) {
+          sugarVal = double.parse(parsed.toStringAsFixed(1));
+        }
+      }
       
       final record = HealthRecord(
         systolic: int.parse(_sysController.text),
