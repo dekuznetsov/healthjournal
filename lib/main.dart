@@ -10,6 +10,7 @@ import 'models/health_record.dart';
 import 'services/database_helper.dart';
 import 'services/report_service.dart';
 import 'services/notification_service.dart';
+import 'services/settings_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -111,6 +112,90 @@ class _MainScreenState extends State<MainScreen> {
                     Text('Керування даними', style: TextStyle(color: Colors.white70, fontSize: 14)),
                   ],
                 ),
+              ),
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text('Налаштування нагадувань', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+              ),
+              FutureBuilder<bool>(
+                future: SettingsService().getNotificationsEnabled(),
+                builder: (context, snapshot) {
+                  final enabled = snapshot.data ?? true;
+                  return SwitchListTile(
+                    title: const Text('Нагадування'),
+                    subtitle: const Text('8:00 та 20:00 (з повторами)'),
+                    value: enabled,
+                    onChanged: (value) async {
+                      await SettingsService().setNotificationsEnabled(value);
+                      await NotificationService().scheduleDailyReminders();
+                      (context as Element).markNeedsBuild(); // Refresh drawer
+                    },
+                    secondary: Icon(enabled ? Icons.notifications_active : Icons.notifications_off, color: Colors.teal),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.access_time, color: Colors.teal),
+                title: const Text('Змінити час нагадувань'),
+                onTap: () async {
+                  final morningTime = await SettingsService().getMorningTime();
+                  final eveningTime = await SettingsService().getEveningTime();
+                  
+                  if (!mounted) return;
+                  
+                  await showDialog(
+                    context: context,
+                    builder: (context) => StatefulBuilder(
+                      builder: (context, setState) {
+                        return AlertDialog(
+                          title: const Text('Час нагадувань'),
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              ListTile(
+                                title: const Text('Ранок'),
+                                trailing: Text(morningTime.format(context)),
+                                onTap: () async {
+                                  final newTime = await showTimePicker(
+                                    context: context,
+                                    initialTime: morningTime,
+                                  );
+                                  if (newTime != null) {
+                                    await SettingsService().setMorningTime(newTime);
+                                    setState(() {});
+                                  }
+                                },
+                              ),
+                              ListTile(
+                                title: const Text('Вечір'),
+                                trailing: Text(eveningTime.format(context)),
+                                onTap: () async {
+                                  final newTime = await showTimePicker(
+                                    context: context,
+                                    initialTime: eveningTime,
+                                  );
+                                  if (newTime != null) {
+                                    await SettingsService().setEveningTime(newTime);
+                                    setState(() {});
+                                  }
+                                },
+                              ),
+                            ],
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () async {
+                                await NotificationService().scheduleDailyReminders();
+                                if (context.mounted) Navigator.pop(context);
+                              },
+                              child: const Text('Готово'),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  );
+                },
               ),
               const Padding(
                 padding: EdgeInsets.all(16.0),

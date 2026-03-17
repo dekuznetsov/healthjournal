@@ -2,6 +2,9 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'settings_service.dart';
+import 'database_helper.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -9,6 +12,8 @@ class NotificationService {
   NotificationService._internal();
 
   final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
+  final SettingsService _settingsService = SettingsService();
+  final DatabaseHelper _dbHelper = DatabaseHelper();
 
   Future<void> init() async {
     tz.initializeTimeZones();
@@ -40,31 +45,68 @@ class NotificationService {
     // Clear all existing notifications to avoid duplicates
     await _notificationsPlugin.cancelAll();
 
-    // Schedule 6 reminders for morning (08:00 - 08:50)
-    for (int i = 0; i < 6; i++) {
-      final minute = i * 10;
-      await _scheduleNotification(
-        id: i,
-        title: 'Ранкове вимірювання',
-        body: 'Пора поміряти тиск та цукор (08:${minute.toString().padLeft(2, '0')})',
-        hour: 8,
-        minute: minute,
-      );
+    final enabled = await _settingsService.getNotificationsEnabled();
+    if (!enabled) {
+      debugPrint('Notifications are disabled in settings.');
+      return;
     }
 
-    // Schedule 6 reminders for evening (20:00 - 20:50)
-    for (int i = 0; i < 6; i++) {
-      final minute = i * 10;
-      await _scheduleNotification(
-        id: 10 + i,
-        title: 'Вечірнє вимірювання',
-        body: 'Пора поміряти тиск та цукор (20:${minute.toString().padLeft(2, '0')})',
-        hour: 20,
-        minute: minute,
-      );
+    // Check if data for today already exists
+    final records = await _dbHelper.getRecords();
+    final today = DateTime.now();
+    
+    bool hasMorningData = records.any((r) => 
+      r.timestamp.year == today.year && 
+      r.timestamp.month == today.month && 
+      r.timestamp.day == today.day && 
+      r.period == 'morning'
+    );
+    
+    bool hasEveningData = records.any((r) => 
+      r.timestamp.year == today.year && 
+      r.timestamp.month == today.month && 
+      r.timestamp.day == today.day && 
+      r.period == 'evening'
+    );
+
+    final morningTime = await _settingsService.getMorningTime();
+    final eveningTime = await _settingsService.getEveningTime();
+
+    // Schedule 6 reminders for morning if no data
+    if (!hasMorningData) {
+      for (int i = 0; i < 6; i++) {
+        final totalMinutes = morningTime.hour * 60 + morningTime.minute + (i * 10);
+        final hour = (totalMinutes ~/ 60) % 24;
+        final minute = totalMinutes % 60;
+        
+        await _scheduleNotification(
+          id: i,
+          title: 'Ранкове вимірювання',
+          body: 'Пора поміряти тиск та цукор (${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')})',
+          hour: hour,
+          minute: minute,
+        );
+      }
+    }
+
+    // Schedule 6 reminders for evening if no data
+    if (!hasEveningData) {
+      for (int i = 0; i < 6; i++) {
+        final totalMinutes = eveningTime.hour * 60 + eveningTime.minute + (i * 10);
+        final hour = (totalMinutes ~/ 60) % 24;
+        final minute = totalMinutes % 60;
+
+        await _scheduleNotification(
+          id: 10 + i,
+          title: 'Вечірнє вимірювання',
+          body: 'Пора поміряти тиск та цукор (${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')})',
+          hour: hour,
+          minute: minute,
+        );
+      }
     }
     
-    debugPrint('Daily reminders scheduled (8:00 and 20:00 with 10m intervals)');
+    debugPrint('Daily reminders scheduled (enabled: $enabled, morning: ${!hasMorningData}, evening: ${!hasEveningData})');
   }
 
   Future<void> _scheduleNotification({
@@ -83,10 +125,9 @@ class NotificationService {
         android: AndroidNotificationDetails(
           'health_reminders',
           'Нагадування про здоров\'я',
-          channelDescription: 'Нагадування про необхідність вимірювання тиску та цукру',
+          channelDescription: 'Нагадування про необхідність вимірювання тиску та цукур',
           importance: Importance.max,
           priority: Priority.high,
-          sound: RawResourceAndroidNotificationSound('notification_sound'), // Custom sound if exists
         ),
         iOS: DarwinNotificationDetails(
           presentAlert: true,
