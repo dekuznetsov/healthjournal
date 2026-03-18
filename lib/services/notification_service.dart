@@ -2,7 +2,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'settings_service.dart';
 import 'database_helper.dart';
 
@@ -16,7 +16,7 @@ class NotificationService {
   final DatabaseHelper _dbHelper = DatabaseHelper();
 
   Future<void> init() async {
-    tz.initializeTimeZones();
+    await _configureLocalTimeZone();
     
     const AndroidInitializationSettings androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
     const DarwinInitializationSettings iosSettings = DarwinInitializationSettings(
@@ -128,6 +128,8 @@ class NotificationService {
           channelDescription: 'Нагадування про необхідність вимірювання тиску та цукур',
           importance: Importance.max,
           priority: Priority.high,
+          category: AndroidNotificationCategory.call,
+          audioAttributesUsage: AudioAttributesUsage.notificationRingtone,
         ),
         iOS: DarwinNotificationDetails(
           presentAlert: true,
@@ -148,5 +150,14 @@ class NotificationService {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
     return scheduledDate;
+  }
+
+  Future<void> _configureLocalTimeZone() async {
+    if (kIsWeb) {
+      return;
+    }
+    tz.initializeTimeZones();
+    final String timeZoneName = await FlutterTimezone.getLocalTimezone();
+    tz.setLocalLocation(tz.getLocation(timeZoneName));
   }
 }
