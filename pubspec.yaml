@@ -1,5 +1,5 @@
 name: hyper_journal
-description: "A new Flutter project."
+description: "Hypertonic journal"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -30,22 +30,22 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
 
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   sqflite: ^2.4.2
   sqflite_common_ffi: ^2.3.4+1
-  fl_chart: ^0.71.0
+  fl_chart: ^1.2.0
   path: ^1.9.1
   intl: ^0.20.2
-  window_manager: ^0.4.3
+  window_manager: ^0.5.1
   pdf: ^3.11.1
   printing: ^5.13.2
-  flutter_local_notifications: ^18.0.1
-  timezone: ^0.10.0
+  flutter_local_notifications: ^21.0.0
+  timezone: ^0.11.0
   shared_preferences: ^2.3.5
-  flutter_timezone: ^2.1.0
+  flutter_timezone: ^5.0.2
 
 dev_dependencies:
   flutter_test:
@@ -57,14 +57,22 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
-  flutter_launcher_icons: ^0.13.1
+  flutter_launcher_icons: ^0.14.4
   image: ^4.2.0
 
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "assets/icon/icon.png"
+  image_path: "assets/icon/image001.png"
   min_sdk_android: 21
+  remove_alpha_ios: true
+  windows:
+    generate: true
+    image_path: "assets/icon/image001.png"
+    icon_size: 48
+  macos:
+    generate: true
+    image_path: "assets/icon/image001.png"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -72,10 +80,12 @@ flutter_launcher_icons:
 # The following section is specific to Flutter packages.
 flutter:
 
-  # The following line ensures that the Material Icons font is
-  # included with your application, so that you can use the icons in
-  # the material Icons class.
+  generate: true
   uses-material-design: true
+
+  assets:
+    - assets/fonts/NotoSans-Regular.ttf
+    - assets/fonts/NotoSans-Bold.ttf
 
   # To add assets to your application, add an assets section, like this:
   # assets:

@@ -1,0 +1,125 @@
+{
+  "@@locale": "uk",
+
+  "appTitle": "Щоденник здоров'я",
+  "appBarTitle": "Щоденник Гіпертоніка та Діабетика",
+
+  "tabAdd": "Додати",
+  "tabJournal": "Журнал",
+  "tabChart": "Графік",
+
+  "drawerTitle": "Щоденник здоров'я",
+  "drawerSubtitle": "Керування даними",
+  "drawerReminders": "Налаштування нагадувань",
+  "drawerReports": "Звітність",
+  "drawerDev": "Розробка",
+
+  "menuGenerateReport": "Сформувати звіт",
+  "menuReportSubtitle": "За останні 30 днів",
+  "menuClearDb": "Очистити базу",
+  "menuSeedDb": "Заповнити базу (1 рік)",
+  "menuSeedDbSubtitle": "Довільні значення (DEBUG)",
+
+  "dialogConfirmTitle": "Підтвердження",
+  "dialogConfirmDelete": "Ви впевнені, що хочете видалити всі записи?",
+  "btnCancel": "Скасувати",
+  "btnDelete": "Видалити",
+  "btnSave": "Зберегти",
+  "btnDone": "Готово",
+  "btnReset": "Скинути",
+
+  "periodMorning": "Ранок",
+  "periodEvening": "Вечір",
+
+  "fieldSystolic": "Верхній тиск (SYS)",
+  "fieldSystolicHint": "70-250",
+  "fieldDiastolic": "Нижній тиск (DIA)",
+  "fieldDiastolicHint": "40-150",
+  "fieldPulse": "Пульс",
+  "fieldPulseHint": "30-200",
+  "fieldSugar": "Рівень цукру",
+  "fieldSugarHint": "1.0-30.0",
+
+  "validRequired": "Обов'язково",
+  "validNumbersOnly": "Тільки цифри",
+  "validInvalidFormat": "Некоректний формат",
+  "validSugarRange": "Цукор має бути від 1.0 до 30.0",
+  "validRangeError": "{label} має бути від {min} до {max}",
+  "@validRangeError": {
+    "placeholders": {
+      "label": { "type": "String" },
+      "min": { "type": "int" },
+      "max": { "type": "int" }
+    }
+  },
+
+  "warningSeeDoctor": "⚠️ Необхідно звернутись до лікаря!",
+  "warningLessCarbs": "💡 Рекомендовано вживати менше вуглеводів.",
+
+  "snackSaved": "Дані збережено",
+  "snackWarnDoctor": "\nУВАГА: Необхідно звернутись до лікаря!",
+  "snackWarnCarbs": "\nПорада: Рекомендовано вживати менше вуглеводів.",
+
+  "journalEmpty": "Журнал порожній",
+  "journalPulse": "пульс",
+  "journalSugar": "Цукор",
+
+  "chartNoData": "Немає даних для графіків",
+  "chartPressureTitle": "Графік тиску",
+  "chartSugarTitle": "Графік цукру",
+  "chartNoSugarData": "Немає даних про цукор",
+  "chartNoDataForPeriod": "За вибраний період даних немає",
+  "chart7d": "7д",
+  "chart30d": "30д",
+  "chartYear": "Рік",
+  "chartAll": "Все",
+  "chartSelectPeriod": "Вибрати період",
+  "chartPeriodLabel": "Період: {start} - {end}",
+  "@chartPeriodLabel": {
+    "placeholders": {
+      "start": { "type": "String" },
+      "end": { "type": "String" }
+    }
+  },
+
+  "remindersLoading": "Завантаження налаштувань...",
+  "remindersTitle": "Нагадування",
+  "remindersSubtitle": "{morning} та {evening} (з повторами)",
+  "@remindersSubtitle": {
+    "placeholders": {
+      "morning": { "type": "String" },
+      "evening": { "type": "String" }
+    }
+  },
+  "remindersChangeTime": "Змінити час нагадувань",
+  "remindersDialogTitle": "Час нагадувань",
+
+  "notifMorningTitle": "Ранкове вимірювання",
+  "notifMorningBody": "Пора поміряти тиск та цукор",
+  "notifEveningTitle": "Вечірнє вимірювання",
+  "notifEveningBody": "Пора поміряти тиск та цукор",
+  "notifChannelName": "Нагадування про здоров'я",
+  "notifChannelDesc": "Нагадування про вимірювання тиску та цукру",
+
+  "reportTitle": "Звіт про стан здоров'я (останні 30 днів)",
+  "reportPeriod": "Період: {start} - {end}",
+  "@reportPeriod": {
+    "placeholders": {
+      "start": { "type": "String" },
+      "end": { "type": "String" }
+    }
+  },
+  "reportNoRecords": "Записів за вказаний період не знайдено.",
+  "reportErrorCreating": "Помилка при створенні звіту: {error}",
+  "@reportErrorCreating": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "reportColDate": "Дата",
+  "reportColTime": "Час",
+  "reportColPeriod": "Період",
+  "reportColPressure": "Тиск (SYS/DIA)",
+  "reportColPulse": "Пульс",
+  "reportColSugar": "Цукор"
+}

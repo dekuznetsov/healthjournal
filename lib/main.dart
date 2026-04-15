@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -11,6 +12,7 @@ import 'services/database_helper.dart';
 import 'services/report_service.dart';
 import 'services/notification_service.dart';
 import 'services/settings_service.dart';
+import 'l10n/app_localizations.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,7 +38,6 @@ Future<void> main() async {
     });
   }
 
-  await DatabaseHelper().seedData();
   await NotificationService().init();
   runApp(const HealthDiaryApp());
 }
@@ -44,14 +45,35 @@ Future<void> main() async {
 class HealthDiaryApp extends StatelessWidget {
   const HealthDiaryApp({super.key});
 
+  // Map Russian locale to Ukrainian
+  Locale _resolveLocale(Locale? deviceLocale) {
+    if (deviceLocale == null) return const Locale('uk');
+    if (deviceLocale.languageCode == 'ru') return const Locale('uk');
+    if (deviceLocale.languageCode == 'uk') return const Locale('uk');
+    return const Locale('en');
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Щоденник здоров\'я',
+      title: 'Hypertonic Journal',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
         useMaterial3: true,
       ),
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en'),
+        Locale('uk'),
+      ],
+      localeResolutionCallback: (deviceLocale, supportedLocales) {
+        return _resolveLocale(deviceLocale);
+      },
       home: const MainScreen(),
     );
   }
@@ -80,22 +102,31 @@ class _MainScreenState extends State<MainScreen> {
       _records.clear();
       _records.addAll(records);
     });
-    // Update notifications based on new data
-    await NotificationService().scheduleDailyReminders();
+    if (!mounted) return;
+    final l = AppLocalizations.of(context);
+    await NotificationService().scheduleDailyReminders(
+      morningTitle: l.notifMorningTitle,
+      morningBody: l.notifMorningBody,
+      eveningTitle: l.notifEveningTitle,
+      eveningBody: l.notifEveningBody,
+      channelName: l.notifChannelName,
+      channelDesc: l.notifChannelDesc,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return DefaultTabController(
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Щоденник Гіпертоніка та Діабетика'),
-          bottom: const TabBar(
+          title: Text(l.appBarTitle),
+          bottom: TabBar(
             tabs: [
-              Tab(icon: Icon(Icons.add), text: 'Додати'),
-              Tab(icon: Icon(Icons.history), text: 'Журнал'),
-              Tab(icon: Icon(Icons.show_chart), text: 'Графік'),
+              Tab(icon: const Icon(Icons.add), text: l.tabAdd),
+              Tab(icon: const Icon(Icons.history), text: l.tabJournal),
+              Tab(icon: const Icon(Icons.show_chart), text: l.tabChart),
             ],
           ),
         ),
@@ -103,54 +134,54 @@ class _MainScreenState extends State<MainScreen> {
           child: ListView(
             padding: EdgeInsets.zero,
             children: [
-              const DrawerHeader(
-                decoration: BoxDecoration(color: Colors.teal),
+              DrawerHeader(
+                decoration: const BoxDecoration(color: Colors.teal),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    Text('Щоденник здоров\'я', style: TextStyle(color: Colors.white, fontSize: 24)),
-                    SizedBox(height: 8),
-                    Text('Керування даними', style: TextStyle(color: Colors.white70, fontSize: 14)),
+                    Text(l.drawerTitle, style: const TextStyle(color: Colors.white, fontSize: 24)),
+                    const SizedBox(height: 8),
+                    Text(l.drawerSubtitle, style: const TextStyle(color: Colors.white70, fontSize: 14)),
                   ],
                 ),
               ),
-              const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Text('Налаштування нагадувань', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(l.drawerReminders, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
               ),
               const ReminderSettingsSection(),
-              const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Text('Звітність', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(l.drawerReports, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
               ),
               ListTile(
                 leading: const Icon(Icons.picture_as_pdf, color: Colors.teal),
-                title: const Text('Сформувати звіт'),
-                subtitle: const Text('За останні 30 днів'),
+                title: Text(l.menuGenerateReport),
+                subtitle: Text(l.menuReportSubtitle),
                 onTap: () async {
                   Navigator.pop(context);
                   await ReportService().generateAndShowReport(_records, context);
                 },
               ),
-              const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Text('Розробка', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(l.drawerDev, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
               ),
               ListTile(
                 leading: const Icon(Icons.delete_sweep, color: Colors.red),
-                title: const Text('Очистити базу'),
+                title: Text(l.menuClearDb),
                 onTap: () async {
                   final confirm = await showDialog<bool>(
                     context: context,
                     builder: (context) => AlertDialog(
-                      title: const Text('Підтвердження'),
-                      content: const Text('Ви впевнені, що хочете видалити всі записи?'),
+                      title: Text(l.dialogConfirmTitle),
+                      content: Text(l.dialogConfirmDelete),
                       actions: [
-                        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Скасувати')),
+                        TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l.btnCancel)),
                         TextButton(
                           onPressed: () => Navigator.pop(context, true),
-                          child: const Text('Видалити', style: TextStyle(color: Colors.red)),
+                          child: Text(l.btnDelete, style: const TextStyle(color: Colors.red)),
                         ),
                       ],
                     ),
@@ -165,8 +196,8 @@ class _MainScreenState extends State<MainScreen> {
               if (kDebugMode)
                 ListTile(
                   leading: const Icon(Icons.dataset, color: Colors.teal),
-                  title: const Text('Заповнити базу (1 рік)'),
-                  subtitle: const Text('Довільні значення (DEBUG)'),
+                  title: Text(l.menuSeedDb),
+                  subtitle: Text(l.menuSeedDbSubtitle),
                   onTap: () async {
                     await _dbHelper.seedYearlyData();
                     _loadRecords();
@@ -216,23 +247,26 @@ class _AddDataTabState extends State<AddDataTab> {
   }
 
   String? _validateRequired(String? v, int min, int max, String label) {
-    if (v == null || v.isEmpty) return 'Обов\'язково';
+    final l = AppLocalizations.of(_formKey.currentContext!);
+    if (v == null || v.isEmpty) return l.validRequired;
     final val = int.tryParse(v);
-    if (val == null) return 'Тільки цифри';
-    if (val < min || val > max) return '$label має бути від $min до $max';
+    if (val == null) return l.validNumbersOnly;
+    if (val < min || val > max) return l.validRangeError(label, min, max);
     return null;
   }
 
   String? _validateSugar(String? v) {
-    if (v == null || v.isEmpty) return 'Обов\'язково';
+    final l = AppLocalizations.of(_formKey.currentContext!);
+    if (v == null || v.isEmpty) return l.validRequired;
     final val = double.tryParse(v.replaceFirst(',', '.'));
-    if (val == null) return 'Некоректний формат';
-    if (val < 1.0 || val > 30.0) return 'Цукор має бути від 1.0 до 30.0';
+    if (val == null) return l.validInvalidFormat;
+    if (val < 1.0 || val > 30.0) return l.validSugarRange;
     return null;
   }
 
   Future<void> _save() async {
     if (_formKey.currentState!.validate()) {
+      final l = AppLocalizations.of(_formKey.currentContext!);
       double? sugarVal;
       if (_period == 'morning') {
         final parsed = double.tryParse(_sugarController.text.replaceFirst(',', '.'));
@@ -240,7 +274,7 @@ class _AddDataTabState extends State<AddDataTab> {
           sugarVal = double.parse(parsed.toStringAsFixed(1));
         }
       }
-      
+
       final record = HealthRecord(
         systolic: int.parse(_sysController.text),
         diastolic: int.parse(_diaController.text),
@@ -252,7 +286,7 @@ class _AddDataTabState extends State<AddDataTab> {
 
       await DatabaseHelper().insertRecord(record);
       widget.onRecordAdded();
-      
+
       _sysController.clear();
       _diaController.clear();
       _pulseController.clear();
@@ -260,12 +294,12 @@ class _AddDataTabState extends State<AddDataTab> {
 
       if (!mounted) return;
 
-      String message = 'Дані збережено';
+      String message = l.snackSaved;
       if (sugarVal != null) {
         if (sugarVal > 10.0) {
-          message += '\nУВАГА: Необхідно звернутись до лікаря!';
+          message += l.snackWarnDoctor;
         } else if (sugarVal > 7.0) {
-          message += '\nПорада: Рекомендовано вживати менше вуглеводів.';
+          message += l.snackWarnCarbs;
         }
       }
 
@@ -281,6 +315,7 @@ class _AddDataTabState extends State<AddDataTab> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Form(
@@ -288,9 +323,9 @@ class _AddDataTabState extends State<AddDataTab> {
         child: Column(
           children: [
             SegmentedButton<String>(
-              segments: const [
-                ButtonSegment(value: 'morning', label: Text('Ранок'), icon: Icon(Icons.wb_sunny)),
-                ButtonSegment(value: 'evening', label: Text('Вечір'), icon: Icon(Icons.nightlight_round)),
+              segments: [
+                ButtonSegment(value: 'morning', label: Text(l.periodMorning), icon: const Icon(Icons.wb_sunny)),
+                ButtonSegment(value: 'evening', label: Text(l.periodEvening), icon: const Icon(Icons.nightlight_round)),
               ],
               selected: {_period},
               onSelectionChanged: (val) => setState(() => _period = val.first),
@@ -298,29 +333,29 @@ class _AddDataTabState extends State<AddDataTab> {
             const SizedBox(height: 20),
             TextFormField(
               controller: _sysController,
-              decoration: const InputDecoration(labelText: 'Верхній тиск (SYS)', border: OutlineInputBorder(), hintText: '70-250'),
+              decoration: InputDecoration(labelText: l.fieldSystolic, border: const OutlineInputBorder(), hintText: l.fieldSystolicHint),
               keyboardType: TextInputType.number,
               validator: (v) => _validateRequired(v, 70, 250, 'SYS'),
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _diaController,
-              decoration: const InputDecoration(labelText: 'Нижній тиск (DIA)', border: OutlineInputBorder(), hintText: '40-150'),
+              decoration: InputDecoration(labelText: l.fieldDiastolic, border: const OutlineInputBorder(), hintText: l.fieldDiastolicHint),
               keyboardType: TextInputType.number,
               validator: (v) => _validateRequired(v, 40, 150, 'DIA'),
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _pulseController,
-              decoration: const InputDecoration(labelText: 'Пульс', border: OutlineInputBorder(), hintText: '30-200'),
+              decoration: InputDecoration(labelText: l.fieldPulse, border: const OutlineInputBorder(), hintText: l.fieldPulseHint),
               keyboardType: TextInputType.number,
-              validator: (v) => _validateRequired(v, 30, 200, 'Пульс'),
+              validator: (v) => _validateRequired(v, 30, 200, l.fieldPulse),
             ),
             if (_period == 'morning') ...[
               const SizedBox(height: 12),
               TextFormField(
                 controller: _sugarController,
-                decoration: const InputDecoration(labelText: 'Рівень цукру', border: OutlineInputBorder(), hintText: '1.0-30.0'),
+                decoration: InputDecoration(labelText: l.fieldSugar, border: const OutlineInputBorder(), hintText: l.fieldSugarHint),
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 validator: _validateSugar,
                 onChanged: (_) => setState(() {}),
@@ -329,14 +364,14 @@ class _AddDataTabState extends State<AddDataTab> {
                 final val = double.tryParse(_sugarController.text.replaceFirst(',', '.'));
                 if (val == null) return const SizedBox();
                 if (val > 10.0) {
-                  return const Padding(
-                    padding: EdgeInsets.only(top: 8.0),
-                    child: Text('⚠️ Необхідно звернутись до лікаря!', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Text(l.warningSeeDoctor, style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
                   );
                 } else if (val > 7.0) {
-                  return const Padding(
-                    padding: EdgeInsets.only(top: 8.0),
-                    child: Text('💡 Рекомендовано вживати менше вуглеводів.', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Text(l.warningLessCarbs, style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
                   );
                 }
                 return const SizedBox();
@@ -346,7 +381,7 @@ class _AddDataTabState extends State<AddDataTab> {
             ElevatedButton(
               onPressed: _save,
               style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 50)),
-              child: const Text('Зберегти'),
+              child: Text(l.btnSave),
             ),
           ],
         ),
@@ -363,8 +398,9 @@ class JournalTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     if (records.isEmpty) {
-      return const Center(child: Text('Журнал порожній'));
+      return Center(child: Text(l.journalEmpty));
     }
 
     return ListView.builder(
@@ -372,7 +408,7 @@ class JournalTab extends StatelessWidget {
       itemBuilder: (context, index) {
         final r = records[index];
         final dateStr = DateFormat('dd.MM.yyyy HH:mm').format(r.timestamp);
-        
+
         return Card(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: ListTile(
@@ -380,11 +416,11 @@ class JournalTab extends StatelessWidget {
               r.period == 'morning' ? Icons.wb_sunny_outlined : Icons.nightlight_outlined,
               color: r.period == 'morning' ? Colors.orange : Colors.indigo,
             ),
-            title: Text('${r.systolic}/${r.diastolic}, пульс: ${r.pulse}'),
+            title: Text('${r.systolic}/${r.diastolic}, ${l.journalPulse}: ${r.pulse}'),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (r.sugar != null) Text('Цукор: ${r.sugar}'),
+                if (r.sugar != null) Text('${l.journalSugar}: ${r.sugar}'),
                 Text(dateStr, style: const TextStyle(fontSize: 12)),
               ],
             ),
@@ -507,10 +543,11 @@ class _ChartsTabState extends State<ChartsTab> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final filteredRecords = _getFilteredRecords();
 
     if (widget.records.isEmpty) {
-      return const Center(child: Text('Немає даних для графіків'));
+      return Center(child: Text(l.chartNoData));
     }
 
     return SingleChildScrollView(
@@ -524,11 +561,11 @@ class _ChartsTabState extends State<ChartsTab> {
             runSpacing: 8,
             children: [
               SegmentedButton<ChartPeriod>(
-                segments: const [
-                  ButtonSegment(value: ChartPeriod.week, label: Text('7д')),
-                  ButtonSegment(value: ChartPeriod.month, label: Text('30д')),
-                  ButtonSegment(value: ChartPeriod.year, label: Text('Рік')),
-                  ButtonSegment(value: ChartPeriod.all, label: Text('Все')),
+                segments: [
+                  ButtonSegment(value: ChartPeriod.week, label: Text(l.chart7d)),
+                  ButtonSegment(value: ChartPeriod.month, label: Text(l.chart30d)),
+                  ButtonSegment(value: ChartPeriod.year, label: Text(l.chartYear)),
+                  ButtonSegment(value: ChartPeriod.all, label: Text(l.chartAll)),
                 ],
                 selected: {_selectedPeriod == ChartPeriod.custom ? ChartPeriod.all : _selectedPeriod},
                 onSelectionChanged: (val) => setState(() => _selectedPeriod = val.first),
@@ -536,14 +573,14 @@ class _ChartsTabState extends State<ChartsTab> {
               IconButton.filledTonal(
                 onPressed: _selectCustomRange,
                 icon: const Icon(Icons.date_range),
-                tooltip: 'Вибрати період',
+                tooltip: l.chartSelectPeriod,
                 isSelected: _selectedPeriod == ChartPeriod.custom,
               ),
               if (_selectedPeriod == ChartPeriod.custom)
                 TextButton.icon(
                   onPressed: () => setState(() => _selectedPeriod = ChartPeriod.month),
                   icon: const Icon(Icons.refresh, size: 16),
-                  label: const Text('Скинути', style: TextStyle(fontSize: 12)),
+                  label: Text(l.btnReset, style: const TextStyle(fontSize: 12)),
                 ),
             ],
           ),
@@ -551,18 +588,21 @@ class _ChartsTabState extends State<ChartsTab> {
             Padding(
               padding: const EdgeInsets.only(top: 8.0),
               child: Text(
-                'Період: ${DateFormat('dd.MM.yy').format(_customRange!.start)} - ${DateFormat('dd.MM.yy').format(_customRange!.end)}',
+                l.chartPeriodLabel(
+                  DateFormat('dd.MM.yy').format(_customRange!.start),
+                  DateFormat('dd.MM.yy').format(_customRange!.end),
+                ),
                 style: const TextStyle(fontSize: 12, color: Colors.teal, fontWeight: FontWeight.bold),
               ),
             ),
           const SizedBox(height: 16),
           if (filteredRecords.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 40.0),
-              child: Text('За вибраний період даних немає'),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 40.0),
+              child: Text(l.chartNoDataForPeriod),
             )
           else ...[
-            const Text('Графік тиску', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(l.chartPressureTitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
             SizedBox(
               height: 250,
@@ -578,7 +618,7 @@ class _ChartsTabState extends State<ChartsTab> {
               ],
             ),
             const SizedBox(height: 40),
-            const Text('Графік цукру', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(l.chartSugarTitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
             SizedBox(
               height: 250,
@@ -737,7 +777,7 @@ class _ChartsTabState extends State<ChartsTab> {
   Widget _buildSugarChart(List<HealthRecord> sortedRecords) {
     final sugarRecords = sortedRecords.where((r) => r.sugar != null).toList();
     if (sugarRecords.isEmpty) {
-      return const Center(child: Text('Немає даних про цукор'));
+      return Center(child: Text(AppLocalizations.of(context).chartNoSugarData));
     }
 
     return BarChart(
@@ -875,38 +915,48 @@ class _ReminderSettingsSectionState extends State<ReminderSettingsSection> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     if (_isLoading) {
-      return const ListTile(title: Text('Завантаження налаштувань...'));
+      return ListTile(title: Text(l.remindersLoading));
     }
 
     return Column(
       children: [
         SwitchListTile(
-          title: const Text('Нагадування'),
-          subtitle: Text('${_morningTime.format(context)} та ${_eveningTime.format(context)} (з повторами)'),
+          title: Text(l.remindersTitle),
+          subtitle: Text(l.remindersSubtitle(_morningTime.format(context), _eveningTime.format(context))),
           value: _enabled,
           onChanged: (value) async {
             setState(() => _enabled = value);
             await SettingsService().setNotificationsEnabled(value);
-            await NotificationService().scheduleDailyReminders();
+            final l = AppLocalizations.of(context);
+            await NotificationService().scheduleDailyReminders(
+              morningTitle: l.notifMorningTitle,
+              morningBody: l.notifMorningBody,
+              eveningTitle: l.notifEveningTitle,
+              eveningBody: l.notifEveningBody,
+              channelName: l.notifChannelName,
+              channelDesc: l.notifChannelDesc,
+            );
           },
           secondary: Icon(_enabled ? Icons.notifications_active : Icons.notifications_off, color: Colors.teal),
         ),
         ListTile(
           leading: const Icon(Icons.access_time, color: Colors.teal),
-          title: const Text('Змінити час нагадувань'),
+          title: Text(l.remindersChangeTime),
           onTap: () async {
             await showDialog(
               context: context,
               builder: (context) => StatefulBuilder(
                 builder: (context, setDialogState) {
+                  final dl = AppLocalizations.of(context);
                   return AlertDialog(
-                    title: const Text('Час нагадувань'),
+                    title: Text(dl.remindersDialogTitle),
                     content: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         ListTile(
-                          title: const Text('Ранок'),
+                          title: Text(dl.periodMorning),
                           trailing: Text(_morningTime.format(context)),
                           onTap: () async {
                             final newTime = await showTimePicker(
@@ -916,12 +966,12 @@ class _ReminderSettingsSectionState extends State<ReminderSettingsSection> {
                             if (newTime != null) {
                               await SettingsService().setMorningTime(newTime);
                               setDialogState(() => _morningTime = newTime);
-                              setState(() {}); // Оновити Drawer
+                              setState(() {});
                             }
                           },
                         ),
                         ListTile(
-                          title: const Text('Вечір'),
+                          title: Text(dl.periodEvening),
                           trailing: Text(_eveningTime.format(context)),
                           onTap: () async {
                             final newTime = await showTimePicker(
@@ -931,7 +981,7 @@ class _ReminderSettingsSectionState extends State<ReminderSettingsSection> {
                             if (newTime != null) {
                               await SettingsService().setEveningTime(newTime);
                               setDialogState(() => _eveningTime = newTime);
-                              setState(() {}); // Оновити Drawer
+                              setState(() {});
                             }
                           },
                         ),
@@ -940,10 +990,18 @@ class _ReminderSettingsSectionState extends State<ReminderSettingsSection> {
                     actions: [
                       TextButton(
                         onPressed: () async {
-                          await NotificationService().scheduleDailyReminders();
+                          final l = AppLocalizations.of(context);
+                          await NotificationService().scheduleDailyReminders(
+                            morningTitle: l.notifMorningTitle,
+                            morningBody: l.notifMorningBody,
+                            eveningTitle: l.notifEveningTitle,
+                            eveningBody: l.notifEveningBody,
+                            channelName: l.notifChannelName,
+                            channelDesc: l.notifChannelDesc,
+                          );
                           if (context.mounted) Navigator.pop(context);
                         },
-                        child: const Text('Готово'),
+                        child: Text(dl.btnDone),
                       ),
                     ],
                   );

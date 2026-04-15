@@ -55,58 +55,6 @@ class DatabaseHelper {
     return await db.delete('records', where: 'id = ?', whereArgs: [id]);
   }
 
-  Future<void> seedData() async {
-    Database db = await database;
-    List<Map<String, dynamic>> existing = await db.query('records');
-    
-    if (existing.isEmpty) {
-      List<HealthRecord> debugRecords = [
-        HealthRecord(
-          systolic: 120,
-          diastolic: 80,
-          pulse: 70,
-          sugar: 5.5,
-          timestamp: DateTime.now().subtract(const Duration(days: 2)),
-          period: 'morning',
-        ),
-        HealthRecord(
-          systolic: 135,
-          diastolic: 85,
-          pulse: 75,
-          timestamp: DateTime.now().subtract(const Duration(days: 2, hours: 10)),
-          period: 'evening',
-        ),
-        HealthRecord(
-          systolic: 118,
-          diastolic: 78,
-          pulse: 68,
-          sugar: 5.2,
-          timestamp: DateTime.now().subtract(const Duration(days: 1)),
-          period: 'morning',
-        ),
-        HealthRecord(
-          systolic: 130,
-          diastolic: 82,
-          pulse: 72,
-          timestamp: DateTime.now().subtract(const Duration(days: 1, hours: 10)),
-          period: 'evening',
-        ),
-        HealthRecord(
-          systolic: 122,
-          diastolic: 81,
-          pulse: 71,
-          sugar: 5.4,
-          timestamp: DateTime.now(),
-          period: 'morning',
-        ),
-      ];
-
-      for (var record in debugRecords) {
-        await insertRecord(record);
-      }
-    }
-  }
-
   Future<int> deleteAllRecords() async {
     Database db = await database;
     return await db.delete('records');

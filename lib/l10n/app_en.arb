@@ -1,0 +1,125 @@
+{
+  "@@locale": "en",
+
+  "appTitle": "Health Diary",
+  "appBarTitle": "Hypertension & Diabetes Journal",
+
+  "tabAdd": "Add",
+  "tabJournal": "Journal",
+  "tabChart": "Chart",
+
+  "drawerTitle": "Health Diary",
+  "drawerSubtitle": "Data Management",
+  "drawerReminders": "Reminder Settings",
+  "drawerReports": "Reports",
+  "drawerDev": "Development",
+
+  "menuGenerateReport": "Generate Report",
+  "menuReportSubtitle": "Last 30 days",
+  "menuClearDb": "Clear Database",
+  "menuSeedDb": "Seed Database (1 year)",
+  "menuSeedDbSubtitle": "Random values (DEBUG)",
+
+  "dialogConfirmTitle": "Confirmation",
+  "dialogConfirmDelete": "Are you sure you want to delete all records?",
+  "btnCancel": "Cancel",
+  "btnDelete": "Delete",
+  "btnSave": "Save",
+  "btnDone": "Done",
+  "btnReset": "Reset",
+
+  "periodMorning": "Morning",
+  "periodEvening": "Evening",
+
+  "fieldSystolic": "Systolic pressure (SYS)",
+  "fieldSystolicHint": "70-250",
+  "fieldDiastolic": "Diastolic pressure (DIA)",
+  "fieldDiastolicHint": "40-150",
+  "fieldPulse": "Pulse",
+  "fieldPulseHint": "30-200",
+  "fieldSugar": "Blood sugar level",
+  "fieldSugarHint": "1.0-30.0",
+
+  "validRequired": "Required",
+  "validNumbersOnly": "Numbers only",
+  "validInvalidFormat": "Invalid format",
+  "validSugarRange": "Sugar must be between 1.0 and 30.0",
+  "validRangeError": "{label} must be between {min} and {max}",
+  "@validRangeError": {
+    "placeholders": {
+      "label": { "type": "String" },
+      "min": { "type": "int" },
+      "max": { "type": "int" }
+    }
+  },
+
+  "warningSeeDoctor": "⚠️ Please consult a doctor!",
+  "warningLessCarbs": "💡 Recommended to reduce carbohydrate intake.",
+
+  "snackSaved": "Data saved",
+  "snackWarnDoctor": "\nWARNING: Please consult a doctor!",
+  "snackWarnCarbs": "\nTip: Recommended to reduce carbohydrate intake.",
+
+  "journalEmpty": "Journal is empty",
+  "journalPulse": "pulse",
+  "journalSugar": "Sugar",
+
+  "chartNoData": "No data for charts",
+  "chartPressureTitle": "Blood Pressure Chart",
+  "chartSugarTitle": "Blood Sugar Chart",
+  "chartNoSugarData": "No blood sugar data",
+  "chartNoDataForPeriod": "No data for selected period",
+  "chart7d": "7d",
+  "chart30d": "30d",
+  "chartYear": "Year",
+  "chartAll": "All",
+  "chartSelectPeriod": "Select period",
+  "chartPeriodLabel": "Period: {start} - {end}",
+  "@chartPeriodLabel": {
+    "placeholders": {
+      "start": { "type": "String" },
+      "end": { "type": "String" }
+    }
+  },
+
+  "remindersLoading": "Loading settings...",
+  "remindersTitle": "Reminders",
+  "remindersSubtitle": "{morning} and {evening} (with repeats)",
+  "@remindersSubtitle": {
+    "placeholders": {
+      "morning": { "type": "String" },
+      "evening": { "type": "String" }
+    }
+  },
+  "remindersChangeTime": "Change reminder time",
+  "remindersDialogTitle": "Reminder Time",
+
+  "notifMorningTitle": "Morning Measurement",
+  "notifMorningBody": "Time to measure blood pressure and sugar",
+  "notifEveningTitle": "Evening Measurement",
+  "notifEveningBody": "Time to measure blood pressure and sugar",
+  "notifChannelName": "Health Reminders",
+  "notifChannelDesc": "Reminders to measure blood pressure and blood sugar",
+
+  "reportTitle": "Health Report (last 30 days)",
+  "reportPeriod": "Period: {start} - {end}",
+  "@reportPeriod": {
+    "placeholders": {
+      "start": { "type": "String" },
+      "end": { "type": "String" }
+    }
+  },
+  "reportNoRecords": "No records found for the selected period.",
+  "reportErrorCreating": "Error creating report: {error}",
+  "@reportErrorCreating": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "reportColDate": "Date",
+  "reportColTime": "Time",
+  "reportColPeriod": "Period",
+  "reportColPressure": "Pressure (SYS/DIA)",
+  "reportColPulse": "Pulse",
+  "reportColSugar": "Sugar"
+}
