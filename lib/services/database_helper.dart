@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../models/health_record.dart';
@@ -10,14 +11,52 @@ class DatabaseHelper {
 
   static Database? _database;
 
+  /// Override the database path used by [_initDatabase].
+  ///
+  /// **For testing only.** Set to [inMemoryDatabasePath] (from
+  /// `sqflite_common_ffi`) before the first test so each reset produces a
+  /// fresh, isolated in-memory database.
+  @visibleForTesting
+  static String? databasePathOverride;
+
+  /// Resets the cached database instance.
+  ///
+  /// **For testing only.** Call this in [tearDown] after overriding
+  /// [databaseFactory] with [databaseFactoryFfi] so each test group
+  /// gets a fresh in-memory database.
+  @visibleForTesting
+  static void resetForTesting() {
+    _database = null;
+    _needsCleanup = true;
+  }
+
+  /// Flag set by [resetForTesting] to indicate that the next database access
+  /// should delete all records first.
+  static bool _needsCleanup = false;
+
   Future<Database> get database async {
     if (_database != null) return _database!;
     _database = await _initDatabase();
+    if (_needsCleanup) {
+      _needsCleanup = false;
+      await _database!.delete('records');
+    }
     return _database!;
   }
 
   Future<Database> _initDatabase() async {
-    String path = join(await getDatabasesPath(), 'health_tracker.db');
+    // When databasePathOverride is set (test mode), use it with singleInstance: false
+    // so each openDatabase call creates a fresh, isolated in-memory database.
+    // In production, use the standard file-based path with singleInstance: true.
+    if (databasePathOverride != null) {
+      return await openDatabase(
+        databasePathOverride!,
+        version: 1,
+        onCreate: _onCreate,
+        singleInstance: false,
+      );
+    }
+    final String path = join(await getDatabasesPath(), 'health_tracker.db');
     return await openDatabase(
       path,
       version: 1,

@@ -1,30 +1,20 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+// Basic smoke test for HealthDiaryApp.
+// The full functional tests live in test/utils/ and test/services/.
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:hyper_journal/main.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const HealthDiaryApp());
+  setUpAll(() {
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+  });
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+  test('smoke – test infrastructure initialises without error', () {
+    // Verifies that sqflite_common_ffi initialises correctly in the test
+    // environment. The widget-level tests for the app are intentionally
+    // omitted here because the app requires platform channels (notifications,
+    // shared_preferences) that are not available in the headless test runner.
+    expect(databaseFactory, isNotNull);
   });
 }

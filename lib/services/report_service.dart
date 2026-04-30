@@ -7,6 +7,37 @@ import 'package:intl/intl.dart';
 import '../models/health_record.dart';
 import '../l10n/app_localizations.dart';
 
+/// Returns the last 30 days of [records] sorted in descending order
+/// (newest first), relative to [now].
+List<HealthRecord> filterAndSortForReport(
+  List<HealthRecord> records,
+  DateTime now,
+) {
+  final thirtyDaysAgo = now.subtract(const Duration(days: 30));
+  return records.where((r) => r.timestamp.isAfter(thirtyDaysAgo)).toList()
+    ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+}
+
+/// Formats a [HealthRecord] as a list of strings for a PDF table row.
+///
+/// Column order: [date, time, period, pressure, pulse, sugar]
+/// - date: `dd.MM.yyyy`
+/// - time: `HH:mm`
+/// - period: `r.period` (raw value — caller localises if needed)
+/// - pressure: `SYS/DIA`
+/// - pulse: integer string
+/// - sugar: `toStringAsFixed(1)` or `'-'` when null
+List<String> formatRecordRow(HealthRecord r) {
+  return [
+    DateFormat('dd.MM.yyyy').format(r.timestamp),
+    DateFormat('HH:mm').format(r.timestamp),
+    r.period,
+    '${r.systolic}/${r.diastolic}',
+    r.pulse.toString(),
+    r.sugar?.toStringAsFixed(1) ?? '-',
+  ];
+}
+
 class ReportService {
   Future<void> generateAndShowReport(List<HealthRecord> records, BuildContext context) async {
     final l = AppLocalizations.of(context);
@@ -22,8 +53,7 @@ class ReportService {
 
       final now = DateTime.now();
       final thirtyDaysAgo = now.subtract(const Duration(days: 30));
-      final filteredRecords = records.where((r) => r.timestamp.isAfter(thirtyDaysAgo)).toList()
-        ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      final filteredRecords = filterAndSortForReport(records, now);
 
       final fontData = await rootBundle.load('assets/fonts/NotoSans-Regular.ttf');
       final fontBoldData = await rootBundle.load('assets/fonts/NotoSans-Bold.ttf');
@@ -63,13 +93,15 @@ class ReportService {
                   l.reportColSugar,
                 ],
                 data: filteredRecords.map((r) {
+                  final row = formatRecordRow(r);
+                  // Replace raw period with localized string
                   return [
-                    DateFormat('dd.MM.yyyy').format(r.timestamp),
-                    DateFormat('HH:mm').format(r.timestamp),
+                    row[0],
+                    row[1],
                     r.period == 'morning' ? l.periodMorning : l.periodEvening,
-                    '${r.systolic}/${r.diastolic}',
-                    r.pulse.toString(),
-                    r.sugar?.toStringAsFixed(1) ?? '-',
+                    row[3],
+                    row[4],
+                    row[5],
                   ];
                 }).toList(),
                 headerStyle: pw.TextStyle(font: fontBold, color: PdfColors.white),

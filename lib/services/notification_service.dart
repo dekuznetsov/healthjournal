@@ -7,6 +7,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'settings_service.dart';
 import 'database_helper.dart';
+import '../utils/notification_utils.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -74,30 +75,20 @@ class NotificationService {
     final records = await _dbHelper.getRecords();
     final today = DateTime.now();
 
-    final hasMorning = records.any((r) =>
-        r.timestamp.year == today.year &&
-        r.timestamp.month == today.month &&
-        r.timestamp.day == today.day &&
-        r.period == 'morning');
-
-    final hasEvening = records.any((r) =>
-        r.timestamp.year == today.year &&
-        r.timestamp.month == today.month &&
-        r.timestamp.day == today.day &&
-        r.period == 'evening');
+    final hasMorning = shouldSkipPeriod(records, 'morning', today);
+    final hasEvening = shouldSkipPeriod(records, 'evening', today);
 
     final morningTime = await _settingsService.getMorningTime();
     final eveningTime = await _settingsService.getEveningTime();
 
     if (!hasMorning) {
-      for (int i = 0; i < 6; i++) {
-        final total = morningTime.hour * 60 + morningTime.minute + (i * 10);
+      for (final t in buildNotificationTimes(morningTime, 0)) {
         await _schedule(
-          id: i,
+          id: t.id,
           title: morningTitle,
           body: morningBody,
-          hour: (total ~/ 60) % 24,
-          minute: total % 60,
+          hour: t.hour,
+          minute: t.minute,
           channelName: channelName,
           channelDesc: channelDesc,
         );
@@ -105,14 +96,13 @@ class NotificationService {
     }
 
     if (!hasEvening) {
-      for (int i = 0; i < 6; i++) {
-        final total = eveningTime.hour * 60 + eveningTime.minute + (i * 10);
+      for (final t in buildNotificationTimes(eveningTime, 10)) {
         await _schedule(
-          id: 10 + i,
+          id: t.id,
           title: eveningTitle,
           body: eveningBody,
-          hour: (total ~/ 60) % 24,
-          minute: total % 60,
+          hour: t.hour,
+          minute: t.minute,
           channelName: channelName,
           channelDesc: channelDesc,
         );

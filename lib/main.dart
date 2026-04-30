@@ -13,6 +13,9 @@ import 'services/report_service.dart';
 import 'services/notification_service.dart';
 import 'services/settings_service.dart';
 import 'l10n/app_localizations.dart';
+import 'utils/period_utils.dart';
+import 'utils/validators.dart';
+import 'utils/locale_utils.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -45,13 +48,8 @@ Future<void> main() async {
 class HealthDiaryApp extends StatelessWidget {
   const HealthDiaryApp({super.key});
 
-  // Map Russian locale to Ukrainian
-  Locale _resolveLocale(Locale? deviceLocale) {
-    if (deviceLocale == null) return const Locale('uk');
-    if (deviceLocale.languageCode == 'ru') return const Locale('uk');
-    if (deviceLocale.languageCode == 'uk') return const Locale('uk');
-    return const Locale('en');
-  }
+  // Map Russian locale to Ukrainian — delegates to top-level resolveLocale()
+  Locale _resolveLocale(Locale? deviceLocale) => resolveLocale(deviceLocale);
 
   @override
   Widget build(BuildContext context) {
@@ -242,26 +240,28 @@ class _AddDataTabState extends State<AddDataTab> {
   @override
   void initState() {
     super.initState();
-    final hour = DateTime.now().hour;
-    _period = (hour >= 5 && hour < 12) ? 'morning' : 'evening';
+    _period = determinePeriod(DateTime.now().hour);
   }
 
   String? _validateRequired(String? v, int min, int max, String label) {
     final l = AppLocalizations.of(_formKey.currentContext!);
+    final result = validateRequired(v, min, max, label);
+    if (result == null) return null;
+    // Map pure-function keys to localized strings
     if (v == null || v.isEmpty) return l.validRequired;
     final val = int.tryParse(v);
     if (val == null) return l.validNumbersOnly;
-    if (val < min || val > max) return l.validRangeError(label, min, max);
-    return null;
+    return l.validRangeError(label, min, max);
   }
 
   String? _validateSugar(String? v) {
     final l = AppLocalizations.of(_formKey.currentContext!);
+    final result = validateSugar(v);
+    if (result == null) return null;
     if (v == null || v.isEmpty) return l.validRequired;
     final val = double.tryParse(v.replaceFirst(',', '.'));
     if (val == null) return l.validInvalidFormat;
-    if (val < 1.0 || val > 30.0) return l.validSugarRange;
-    return null;
+    return l.validSugarRange;
   }
 
   Future<void> _save() async {
@@ -363,12 +363,13 @@ class _AddDataTabState extends State<AddDataTab> {
               Builder(builder: (context) {
                 final val = double.tryParse(_sugarController.text.replaceFirst(',', '.'));
                 if (val == null) return const SizedBox();
-                if (val > 10.0) {
+                final warning = classifySugarWarning(val);
+                if (warning == 'seeDoctor') {
                   return Padding(
                     padding: const EdgeInsets.only(top: 8.0),
                     child: Text(l.warningSeeDoctor, style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
                   );
-                } else if (val > 7.0) {
+                } else if (warning == 'lessCarbs') {
                   return Padding(
                     padding: const EdgeInsets.only(top: 8.0),
                     child: Text(l.warningLessCarbs, style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
