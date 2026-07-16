@@ -94,6 +94,18 @@ class DatabaseHelper {
     return await db.delete('records', where: 'id = ?', whereArgs: [id]);
   }
 
+  Future<bool> hasRecordToday(String period) async {
+    final db = await database;
+    final now = DateTime.now();
+    final start = DateTime(now.year, now.month, now.day);
+    final end = start.add(const Duration(days: 1));
+    final result = await db.rawQuery(
+      "SELECT COUNT(*) as cnt FROM records WHERE period = ? AND timestamp >= ? AND timestamp < ?",
+      [period, start.toIso8601String(), end.toIso8601String()],
+    );
+    return (Sqflite.firstIntValue(result) ?? 0) > 0;
+  }
+
   Future<int> deleteAllRecords() async {
     Database db = await database;
     return await db.delete('records');
@@ -101,30 +113,32 @@ class DatabaseHelper {
 
   Future<void> seedYearlyData() async {
     await deleteAllRecords();
+    final db = await database;
     final random = Random();
-    DateTime now = DateTime.now();
+    final now = DateTime.now();
+    final batch = db.batch();
 
     for (int i = 365; i >= 0; i--) {
-      DateTime day = now.subtract(Duration(days: i));
-      
-      // Morning record
-      await insertRecord(HealthRecord(
+      final day = now.subtract(Duration(days: i));
+
+      batch.insert('records', HealthRecord(
         systolic: 115 + random.nextInt(25),
         diastolic: 70 + random.nextInt(20),
         pulse: 60 + random.nextInt(25),
         sugar: 4.5 + (random.nextDouble() * 2.5),
         timestamp: DateTime(day.year, day.month, day.day, 8, 0),
         period: 'morning',
-      ));
+      ).toMap());
 
-      // Evening record
-      await insertRecord(HealthRecord(
+      batch.insert('records', HealthRecord(
         systolic: 120 + random.nextInt(30),
         diastolic: 75 + random.nextInt(20),
         pulse: 65 + random.nextInt(25),
         timestamp: DateTime(day.year, day.month, day.day, 20, 0),
         period: 'evening',
-      ));
+      ).toMap());
     }
+
+    await batch.commit(noResult: true);
   }
 }

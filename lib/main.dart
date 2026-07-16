@@ -96,11 +96,11 @@ class _MainScreenState extends State<MainScreen> {
 
   Future<void> _loadRecords() async {
     final records = await _dbHelper.getRecords();
+    if (!mounted) return;
     setState(() {
       _records.clear();
       _records.addAll(records);
     });
-    if (!mounted) return;
     final l = AppLocalizations.of(context);
     await NotificationService().scheduleDailyReminders(
       morningTitle: l.notifMorningTitle,
@@ -188,7 +188,8 @@ class _MainScreenState extends State<MainScreen> {
                     await _dbHelper.deleteAllRecords();
                     _loadRecords();
                   }
-                  if (mounted) Navigator.pop(context);
+                  if (!mounted) return;
+                  Navigator.of(this.context).pop();
                 },
               ),
               if (kDebugMode)
@@ -244,7 +245,8 @@ class _AddDataTabState extends State<AddDataTab> {
   }
 
   String? _validateRequired(String? v, int min, int max, String label) {
-    final l = AppLocalizations.of(_formKey.currentContext!);
+    final ctx = _formKey.currentContext ?? context;
+    final l = AppLocalizations.of(ctx);
     final result = validateRequired(v, min, max, label);
     if (result == null) return null;
     // Map pure-function keys to localized strings
@@ -255,7 +257,8 @@ class _AddDataTabState extends State<AddDataTab> {
   }
 
   String? _validateSugar(String? v) {
-    final l = AppLocalizations.of(_formKey.currentContext!);
+    final ctx = _formKey.currentContext ?? context;
+    final l = AppLocalizations.of(ctx);
     final result = validateSugar(v);
     if (result == null) return null;
     if (v == null || v.isEmpty) return l.validRequired;
@@ -266,7 +269,8 @@ class _AddDataTabState extends State<AddDataTab> {
 
   Future<void> _save() async {
     if (_formKey.currentState!.validate()) {
-      final l = AppLocalizations.of(_formKey.currentContext!);
+      final ctx = _formKey.currentContext ?? context;
+      final l = AppLocalizations.of(ctx);
       double? sugarVal;
       if (_period == 'morning') {
         final parsed = double.tryParse(_sugarController.text.replaceFirst(',', '.'));
@@ -295,10 +299,12 @@ class _AddDataTabState extends State<AddDataTab> {
       if (!mounted) return;
 
       String message = l.snackSaved;
+      String? sugarWarning;
       if (sugarVal != null) {
-        if (sugarVal > 10.0) {
+        sugarWarning = classifySugarWarning(sugarVal);
+        if (sugarWarning == 'seeDoctor') {
           message += l.snackWarnDoctor;
-        } else if (sugarVal > 7.0) {
+        } else if (sugarWarning == 'lessCarbs') {
           message += l.snackWarnCarbs;
         }
       }
@@ -306,7 +312,7 @@ class _AddDataTabState extends State<AddDataTab> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(message),
-          backgroundColor: (sugarVal != null && sugarVal > 10.0) ? Colors.red : Colors.teal,
+          backgroundColor: sugarWarning == 'seeDoctor' ? Colors.red : Colors.teal,
           duration: const Duration(seconds: 4),
         ),
       );
@@ -930,7 +936,8 @@ class _ReminderSettingsSectionState extends State<ReminderSettingsSection> {
           onChanged: (value) async {
             setState(() => _enabled = value);
             await SettingsService().setNotificationsEnabled(value);
-            final l = AppLocalizations.of(context);
+            if (!mounted) return;
+            final l = AppLocalizations.of(this.context);
             await NotificationService().scheduleDailyReminders(
               morningTitle: l.notifMorningTitle,
               morningBody: l.notifMorningBody,

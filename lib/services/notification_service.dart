@@ -72,11 +72,8 @@ class NotificationService {
     final enabled = await _settingsService.getNotificationsEnabled();
     if (!enabled) return;
 
-    final records = await _dbHelper.getRecords();
-    final today = DateTime.now();
-
-    final hasMorning = shouldSkipPeriod(records, 'morning', today);
-    final hasEvening = shouldSkipPeriod(records, 'evening', today);
+    final hasMorning = await _dbHelper.hasRecordToday('morning');
+    final hasEvening = await _dbHelper.hasRecordToday('evening');
 
     final morningTime = await _settingsService.getMorningTime();
     final eveningTime = await _settingsService.getEveningTime();
